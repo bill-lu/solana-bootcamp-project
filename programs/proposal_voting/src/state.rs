@@ -45,7 +45,7 @@ pub struct Proposal {
 impl Proposal {
     // Based on account varfiable sizes
     pub const ACCOUNT_SIZE: usize = ACCOUNT_DISCRIMINATOR_LENGTH 
-                                    + 32*3 + 256 + 1024 + 1 + 64*4 + 128*4;
+                                    + 4*3 + 256 + 1024 + 1 + 8*4 + 16*4;
 }
 
 // Ticket PDA
@@ -62,5 +62,5 @@ pub struct VoteTracker {
 impl VoteTracker {
     // Based on account varfiable sizes
     pub const ACCOUNT_SIZE: usize = ACCOUNT_DISCRIMINATOR_LENGTH 
-                                    + 32 + 32 + 1 + 64 + 8;
+                                    + 4 + 4 + 1 + 8 + 1;
 }
