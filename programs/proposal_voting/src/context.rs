@@ -27,6 +27,7 @@ pub struct CreateProposal<'info> {
 pub struct OpenProposal<'info> {
     #[account(
         mut,
+        constraint = user.key == &proposal.authority,
         seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -43,6 +44,7 @@ pub struct OpenProposal<'info> {
 pub struct CloseProposal<'info> {
     #[account(
         mut,
+        constraint = user.key == &proposal.authority,
         seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
         bump
     )]
