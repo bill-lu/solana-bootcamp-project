@@ -25,12 +25,12 @@ pub mod proposal_voting {
         description: String,
         pass_threhold: u64,
         minimum_token_count_to_vote: u64,
-        voting_duration: u128
+        vote_end_timestamp: i64,
+        tally_end_timestamp: i64
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
         let token_account = &mut ctx.accounts.token_account;
         let user = &mut ctx.accounts.user.to_account_info();
-        let current_timestamp = Clock::get()?.unix_timestamp as u128;
 
         // check if the user holds enough token to create proposal.
         Utility::verify_token_account_amount(
@@ -56,13 +56,68 @@ pub mod proposal_voting {
         proposal.proposal_state = State::Initialized;
         proposal.pass_threhold =  pass_threhold;    // the min vote to pass the proposal
         proposal.minimum_token_count_to_vote = minimum_token_count_to_vote;
-        proposal.voting_duration = voting_duration;
-    
+        
+        proposal.proposal_state = State::Initialized;
         proposal.approval_count = 0;
         proposal.reject_count = 0;
-        proposal.created_timestamp = current_timestamp;
-        //proposal.opened_timestamp
-        //proposal.closed_timestamp
+        proposal.tally_approval_count = 0;
+        proposal.tally_reject_count = 0;
+        proposal.created_timestamp = Clock::get()?.unix_timestamp ;;
+        proposal.vote_end_timestamp = vote_end_timestamp;
+        proposal.tally_end_timestamp = tally_end_timestamp;
+
+        Ok(())
+    }
+
+    pub fn open_proposal(
+        ctx: Context<OpenProposal>, 
+        _proposal_id: u32
+    ) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
+        proposal.proposal_state = State::Open;
+        Ok(())
+    }
+
+    pub fn close_proposal(
+        ctx: Context<OpenProposal>, 
+        _proposal_id: u32
+    ) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
+        proposal.proposal_state = State::Closed;
+        Ok(())
+    }
+
+    pub fn vote(
+        ctx: Context<VoteForProposal>, 
+        vote_option: u8,
+        _proposal_id: u32
+    ) -> Result<()> {
+        let proposal = &mut ctx.accounts.proposal;
+        let token_account = &mut ctx.accounts.token_account;
+        let user = &mut ctx.accounts.user;
+        let voter_tracking = &mut ctx.accounts.vote_tracker;
+
+        proposal.proposal_state = State::Closed;
+
+        voter_tracking.voter_account = user.key();
+        voter_tracking.proposal = proposal.key();
+        voter_tracking.token_amount = token_account.amount;
+        voter_tracking.vote_option = VoteOption::new(vote_option).unwrap();
+
+        match voter_tracking.vote_option {
+            VoteOption::Approve => {
+                proposal.approval_count += 1;
+                proposal.approval_weighted_count += 1*token_account.amount
+            },
+            VoteOption::Reject => {
+                proposal.reject_count += 1;
+                proposal.reject_weighted_count += 1*token_account.amount
+            },
+            VoteOption::Abstain => {
+                proposal.abstain_count +=1;
+                proposal.abstain_weighted_count += 1* token_account.amount
+            }
+        }
 
         Ok(())
     }

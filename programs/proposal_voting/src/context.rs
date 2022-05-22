@@ -7,6 +7,7 @@ use crate::state::*;
 pub struct CreateProposal<'info> {
     #[account(
         init, 
+        constraint = token_account.owner == *user.key,
         seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
         bump,
         payer = user, 
@@ -27,7 +28,8 @@ pub struct CreateProposal<'info> {
 pub struct OpenProposal<'info> {
     #[account(
         mut,
-        constraint = user.key == &proposal.authority,
+        constraint = user.key == &proposal.authority
+                    && proposal.proposal_state == State::Initialized,
         seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -57,23 +59,29 @@ pub struct CloseProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_id: u64)]
+#[instruction(proposal_id: u64, vote_option: u8)]
 pub struct VoteForProposal<'info> {
     #[account(
-        mut,
-        seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
-        bump
-    )]
-    pub proposal: Account<'info, Proposal>,
-
-    #[account(
         init, 
+        constraint = token_account.owner == *user.key 
+                && proposal.mint_of_token == token_account.mint 
+                && token_account.amount > proposal.minimum_token_count_to_vote
+                && proposal.proposal_state == State::Open
+                && proposal.vote_end_timestamp > Clock::get().unwrap().unix_timestamp
+                && vote_option <= 2,
         seeds = [b"vote_account".as_ref(), proposal_id.to_le_bytes().as_ref(), user.key.as_ref()], 
         bump, 
         payer = user, 
         space = VoteTracker::ACCOUNT_SIZE
     )]
     pub vote_tracker: Account<'info, VoteTracker>,
+
+    #[account(
+        mut,
+        seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub proposal: Account<'info, Proposal>,
 
     // The token account holding the gated token for this proposal
     #[account(mut)]
