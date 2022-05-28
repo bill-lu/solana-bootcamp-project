@@ -4,7 +4,7 @@ use crate::state::*;
 use crate::context::*;
 use crate::utility::Utility;
 
-declare_id!("3o35aEarPjp3qhEJqpPGyncoRGMJ8Y2FbzrC9Xd5zzzd");
+declare_id!("84FV6Zmu8WLxmUqY5GFKKkkmbzm9CrpfEkf63qTQtdCE");
 
 pub mod error;
 pub mod context;
@@ -62,7 +62,7 @@ pub mod proposal_voting {
         proposal.reject_count = 0;
         proposal.tally_approval_count = 0;
         proposal.tally_reject_count = 0;
-        proposal.created_timestamp = Clock::get()?.unix_timestamp ;;
+        proposal.created_timestamp = Clock::get()?.unix_timestamp ;
         proposal.vote_end_timestamp = vote_end_timestamp;
         proposal.tally_end_timestamp = tally_end_timestamp;
 

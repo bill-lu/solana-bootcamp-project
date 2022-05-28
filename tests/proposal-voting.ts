@@ -3,16 +3,20 @@ import { Program } from "@project-serum/anchor";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 //import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo, getAccount } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
-import { ProposalVoting } from "../target/types/proposal_voting";
 import { assert, expect } from "chai";
+import * as bs58 from "bs58";
 
-describe("solana-bootcamp-project", () => {
+import { ProposalVoting } from "../target/types/proposal_voting";
+
+//const { Web3 } = anchor.web3;
+
+describe("proposal-voting", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  anchor.setProvider(anchor.AnchorProvider.env());
 
-  const program = anchor.workspace.SolanaBootcampProject as Program<ProposalVoting>;
-  
+  const program = anchor.workspace.ProposalVoting as Program<ProposalVoting>;
+
   // accounts etc
   //let mint1, mint2; // spl-token 0.2.0
   let mint1: Token = null;
@@ -37,15 +41,63 @@ describe("solana-bootcamp-project", () => {
   const payer3 = anchor.web3.Keypair.generate();
   const payer4 = anchor.web3.Keypair.generate();
 
+  const UNIX_MS_FACTOR = 1000;
+  const DAY_IN_UNIX = 24 * 60 * 60;
+  const HOURS_IN_UNIX = 60 * 60;
+  const MINUTES_IN_UNIX = 60;
+  const SECONDS_IN_UNIX = 1;
+
   it("Is initialized!", async () => {
+    await initializeMintsAndAccounts();
+  });
+
+  it("User with enough token should be able to create a proposal", async () => {
     // Add your test here.
     //const tx = await program.methods.initializeProposal().rpc();
     //console.log("Your transaction signature", tx);
-    await initializeMintsAndAccounts();
+    const proposalID: number = 1;
+    let title: string = `first proposal`;
+    let desc: string = `some proposal`;
+
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    console.log("program info" + program);
+
+    const [proposalPDA, accountBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [Buffer.from("proposal_account"), mint1.publicKey.toBuffer(),proposalIdBuffer],
+                        program.programId
+      );
+
+    await program.methods.initializeProposal(
+                  proposalID,
+                  title, 
+                  desc, 
+                  new anchor.BN(100), 
+                  new anchor.BN(900),
+                  new anchor.BN((+new Date() / UNIX_MS_FACTOR) + 1 * DAY_IN_UNIX), //voting_end_timestamp
+                  new anchor.BN((+new Date() / UNIX_MS_FACTOR) + 2 * DAY_IN_UNIX), //finalize_vote_end_timestamp
+                  )
+                .accounts({
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
   });
 
 
 
+
+
+
+  // Utilities
+  const getNumberBuffer = (total: number, alloc = 8) => {
+    const totalProposalAccountBuf = Buffer.alloc(alloc);
+    totalProposalAccountBuf.writeUIntLE(total, 0, 6);
+    return totalProposalAccountBuf;
+  };
 
   async function initializeMintsAndAccounts() {
     
@@ -164,6 +216,7 @@ describe("solana-bootcamp-project", () => {
 
     console.log("checking ...");
     let _voter1TAA = await mint1.getAccountInfo(voter1WithToken1Pubkey);
+    console.log("Token Balance ..." + _voter1TAA.amount.toString());
     expect(_voter1TAA.amount.toString()).to.equal((voter1Token1Balance).toString());
 
   }

@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 
 use anchor_spl::token::{TokenAccount};
-use mpl_token_metadata::state::Metadata;
 use crate::error::ErrorCode;
 
 pub struct Utility;
