@@ -19,7 +19,8 @@ pub mod proposal_voting {
     pub const MINNIMUM_TOKEN_AMOUNT_TO_CREATE: u64 = 100;
 
     pub fn initialize_proposal(
-        ctx: Context<CreateProposal>, 
+        ctx: Context<CreateProposal>,
+        _seed: String, 
         proposal_id: u32,
         title: String,
         description: String,
@@ -30,7 +31,7 @@ pub mod proposal_voting {
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
         let token_account = &mut ctx.accounts.token_account;
-        let user = &mut ctx.accounts.user.to_account_info();
+        let user = &mut ctx.accounts.admin.to_account_info();
 
         // check if the user holds enough token to create proposal.
         Utility::verify_token_account_amount(

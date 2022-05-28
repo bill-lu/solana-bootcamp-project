@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
+import { AccountInfo, clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey} from "@solana/web3.js";
 //import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo, getAccount } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { assert, expect } from "chai";
@@ -8,12 +8,13 @@ import * as bs58 from "bs58";
 
 import { ProposalVoting } from "../target/types/proposal_voting";
 
-//const { Web3 } = anchor.web3;
+const { SystemProgram } = anchor.web3;
 
 describe("proposal-voting", () => {
   // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(anchor.AnchorProvider.env());
+  //const provider = anchor.AnchorProvider.env();
+  const provider = anchor.AnchorProvider.local();
+  anchor.setProvider(provider);
 
   const program = anchor.workspace.ProposalVoting as Program<ProposalVoting>;
 
@@ -47,14 +48,26 @@ describe("proposal-voting", () => {
   const MINUTES_IN_UNIX = 60;
   const SECONDS_IN_UNIX = 1;
 
-  it("Is initialized!", async () => {
+  // Global addresses for easy loading to subsequent tests
+  let bump;
+  let proposalPDA;
+  let adminTokenAccount;
+
+  before(async () => {
     await initializeMintsAndAccounts();
   });
 
+  /*
+  it("Is initialized!", async () => {
+    await initializeMintsAndAccounts();
+  });
+  */
+
   it("User with enough token should be able to create a proposal", async () => {
-    // Add your test here.
-    //const tx = await program.methods.initializeProposal().rpc();
-    //console.log("Your transaction signature", tx);
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
     const proposalID: number = 1;
     let title: string = `first proposal`;
     let desc: string = `some proposal`;
@@ -63,12 +76,13 @@ describe("proposal-voting", () => {
 
     console.log("program info" + program);
 
-    const [proposalPDA, accountBump] = await anchor.web3.PublicKey.findProgramAddress(
-                        [Buffer.from("proposal_account"), mint1.publicKey.toBuffer(),proposalIdBuffer],
+    [proposalPDA, bump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [seed, mint1.publicKey.toBuffer(),proposalIdBuffer],
                         program.programId
       );
 
     await program.methods.initializeProposal(
+                  seedString,            
                   proposalID,
                   title, 
                   desc, 
@@ -80,7 +94,7 @@ describe("proposal-voting", () => {
                 .accounts({
                   proposal: proposalPDA,
                   tokenAccount: voter1WithToken1Pubkey,
-                  user: payer1.publicKey,
+                  admin: payer1.publicKey,
                   systemProgram: SystemProgram.programId,
                 })
                 .signers([payer1])
@@ -145,11 +159,15 @@ describe("proposal-voting", () => {
 
     console.log("create token association accounts");
     // mint1 associated token accounts
-    voter1WithToken1Pubkey = (await mint1.getOrCreateAssociatedAccountInfo (
+    adminTokenAccount = await mint1.getOrCreateAssociatedAccountInfo (
       payer1.publicKey
-    )).address;
-
+    );
+    voter1WithToken1Pubkey = adminTokenAccount.address;
+/*     voter1WithToken1Pubkey = (await mint1.getOrCreateAssociatedAccountInfo (
+      payer1.publicKey
+    )).address; */
     console.log("voter1WithToken1Pubkey: " + voter1WithToken1Pubkey);
+    
     voter2WithToken1Pubkey = (await mint1.getOrCreateAssociatedAccountInfo (
       payer2.publicKey
     )).address;

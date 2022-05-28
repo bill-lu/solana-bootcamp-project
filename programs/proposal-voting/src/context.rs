@@ -3,23 +3,34 @@ use anchor_spl::token::{TokenAccount};
 use crate::state::*;
 
 #[derive(Accounts)]
-#[instruction(proposal_id: u32)]
+#[instruction(
+    seed: String,
+    proposal_id: u32,
+    title: String,
+    description: String,
+    pass_threhold: u64,
+    minimum_token_count_to_vote: u64,
+    vote_end_timestamp: i64,
+    tally_end_timestamp: i64)]
 pub struct CreateProposal<'info> {
     #[account(
         init, 
-        constraint = token_account.owner == *user.key,
-        seeds=[b"proposal_account".as_ref(), token_account.mint.as_ref(),proposal_id.to_le_bytes().as_ref()],
+        constraint = token_account.owner == *admin.key,
+        seeds=[
+            seed.as_bytes(), 
+            token_account.mint.as_ref(),
+            proposal_id.to_le_bytes().as_ref()],
         bump,
-        payer = user, 
+        payer = admin, 
         space = Proposal::ACCOUNT_SIZE)]
     pub proposal: Account<'info, Proposal>,
     
     // The token account holding the gated token for this proposal
-    #[account(mut)]
+    #[account()]
     pub token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
