@@ -19,7 +19,7 @@ pub struct CreateProposal<'info> {
         seeds=[
             seed.as_bytes(), 
             token_account.mint.as_ref(),
-            proposal_id.to_le_bytes().as_ref()],
+            &proposal_id.to_be_bytes()],
         bump,
         payer = admin, 
         space = Proposal::ACCOUNT_SIZE)]

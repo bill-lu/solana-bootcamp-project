@@ -30,15 +30,15 @@ pub mod proposal_voting {
         tally_end_timestamp: i64
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
-        let token_account = &mut ctx.accounts.token_account;
-        let user = &mut ctx.accounts.admin.to_account_info();
+        let token_account = &ctx.accounts.token_account;
+        let user = &ctx.accounts.admin.to_account_info();
 
         // check if the user holds enough token to create proposal.
         Utility::verify_token_account_amount(
             token_account,
             user.key, 
             MINNIMUM_TOKEN_AMOUNT_TO_CREATE,
-        )?; 
+        )?;  
 
         if title.chars().count() > 80 {
             return Err(ErrorCode::TitleIsTooLong.into());

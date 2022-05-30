@@ -57,11 +57,48 @@ describe("proposal-voting", () => {
     await initializeMintsAndAccounts();
   });
 
-  /*
-  it("Is initialized!", async () => {
-    await initializeMintsAndAccounts();
+  it("User without enough token should not be able to create a proposal", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const proposalID: number = 1;
+    let title: string = `first proposal`;
+    let desc: string = `some proposal`;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    [proposalPDA, bump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [seed, 
+                          Buffer.from(mint1.publicKey.toBytes()),
+                          proposalIdBuffer
+                        ],
+                        program.programId
+      );
+
+    try {
+      await program.methods.initializeProposal(
+                  seedString,            
+                  proposalID,
+                  title, 
+                  desc, 
+                  new anchor.BN(100), 
+                  new anchor.BN(900),
+                  new anchor.BN((+new Date() / UNIX_MS_FACTOR) + 1 * DAY_IN_UNIX), //voting_end_timestamp
+                  new anchor.BN((+new Date() / UNIX_MS_FACTOR) + 2 * DAY_IN_UNIX), //finalize_vote_end_timestamp
+                  )
+                .accounts({
+                  proposal: proposalPDA,
+                  tokenAccount: voter4WithToken1Pubkey,
+                  admin: payer4.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer4])
+                .rpc()
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
   });
-  */
 
   it("User with enough token should be able to create a proposal", async () => {
     // Seed for proposalPDA
@@ -71,13 +108,13 @@ describe("proposal-voting", () => {
     const proposalID: number = 1;
     let title: string = `first proposal`;
     let desc: string = `some proposal`;
-
     const proposalIdBuffer = getNumberBuffer(proposalID);
 
-    console.log("program info" + program);
-
     [proposalPDA, bump] = await anchor.web3.PublicKey.findProgramAddress(
-                        [seed, mint1.publicKey.toBuffer(),proposalIdBuffer],
+                        [seed, 
+                          Buffer.from(mint1.publicKey.toBytes()),
+                          proposalIdBuffer
+                        ],
                         program.programId
       );
 
@@ -106,10 +143,14 @@ describe("proposal-voting", () => {
 
 
 
+
+
+
+
   // Utilities
-  const getNumberBuffer = (total: number, alloc = 8) => {
+  const getNumberBuffer = (total: number, alloc = 4) => {
     const totalProposalAccountBuf = Buffer.alloc(alloc);
-    totalProposalAccountBuf.writeUIntLE(total, 0, 6);
+    totalProposalAccountBuf.writeUIntBE(total, 0, 4);
     return totalProposalAccountBuf;
   };
 
