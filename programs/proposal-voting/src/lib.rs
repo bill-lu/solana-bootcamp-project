@@ -72,6 +72,7 @@ pub mod proposal_voting {
 
     pub fn open_proposal(
         ctx: Context<OpenProposal>, 
+        _proposal_seed: String,
         _proposal_id: u32
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
@@ -81,6 +82,7 @@ pub mod proposal_voting {
 
     pub fn close_proposal(
         ctx: Context<OpenProposal>, 
+        _proposal_seed: String,
         _proposal_id: u32
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
@@ -90,7 +92,8 @@ pub mod proposal_voting {
 
     pub fn vote(
         ctx: Context<VoteForProposal>, 
-        vote_option: u8,
+        _proposal_seed: String,
+        vote_option: String,
         _proposal_id: u32
     ) -> Result<()> {
         let proposal = &mut ctx.accounts.proposal;
@@ -98,12 +101,10 @@ pub mod proposal_voting {
         let user = &mut ctx.accounts.user;
         let voter_tracking = &mut ctx.accounts.vote_tracker;
 
-        proposal.proposal_state = State::Closed;
-
         voter_tracking.voter_account = user.key();
         voter_tracking.proposal = proposal.key();
         voter_tracking.token_amount = token_account.amount;
-        voter_tracking.vote_option = VoteOption::new(vote_option).unwrap();
+        voter_tracking.vote_option = VoteOption::new(vote_option.chars().next().unwrap()).unwrap();
 
         match voter_tracking.vote_option {
             VoteOption::Approve => {

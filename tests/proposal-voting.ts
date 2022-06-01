@@ -138,7 +138,85 @@ describe("proposal-voting", () => {
                 .rpc()
   });
 
+  it("Can't vote on a proposal that hasn't been opened", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
 
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [
+                          proposalIdBuffer,
+                          Buffer.from(mint1.publicKey.toBytes()),
+                          Buffer.from(payer1.publicKey.toBytes()),
+                        ],
+                        program.programId
+      );
+
+    await program.methods.vote(
+                  seedString,
+                  "0",            
+                  proposalID
+                  )
+                .accounts({
+                  voteTracker: voterPDA,
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
+  });
+
+  it("Admin should be able to open the proposal for vote", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    await program.methods.openProposal(
+                  seedString,           
+                  proposalID
+                  )
+                .accounts({
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
+  });
+
+  it("Admin should be able to close the proposal for vote", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    await program.methods.closeProposal(
+                  seedString,           
+                  proposalID
+                  )
+                .accounts({
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
+  });
 
 
 

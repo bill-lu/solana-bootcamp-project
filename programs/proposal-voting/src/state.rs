@@ -29,11 +29,11 @@ pub enum VoteOption {
 
 impl VoteOption
 {
-    pub fn new(vote: u8) -> Result<Self> {
+    pub fn new(vote: char) -> Result<Self> {
         match vote {
-            0 => Ok(VoteOption::Approve),
-            1 => Ok(VoteOption::Reject),
-            2 => Ok(VoteOption::Abstain),
+            '0' => Ok(VoteOption::Approve),
+            '1' => Ok(VoteOption::Reject),
+            '2' => Ok(VoteOption::Abstain),
             _ => Err(ErrorCode::InvalidVoteParameter.into()),
         }
     }
@@ -80,7 +80,6 @@ impl Proposal {
 
 // Ticket PDA
 #[account]
-#[derive(Default)] 
 pub struct VoteTracker {    
     pub voter_account: Pubkey,          // voter's token account  
     pub proposal: Pubkey,       // proposal account the voter votes for
