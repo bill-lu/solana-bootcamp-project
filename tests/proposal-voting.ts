@@ -156,7 +156,8 @@ describe("proposal-voting", () => {
                         program.programId
       );
 
-    await program.methods.vote(
+    try {
+      await program.methods.vote(
                   seedString,
                   voteOption,            
                   proposalID
@@ -170,6 +171,11 @@ describe("proposal-voting", () => {
                 })
                 .signers([payer1])
                 .rpc()
+      assert(false);
+    } catch (err)
+    {
+      assert(err);
+    }
   });
 
   it("Admin should be able to open the proposal for vote", async () => {
@@ -229,6 +235,86 @@ describe("proposal-voting", () => {
                 .rpc()
   });
 
+  it("Can't vote on a proposal without enough token", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [
+                          proposalIdBuffer,
+                          mint1.publicKey.toBytes(),
+                          payer4.publicKey.toBytes(),
+                        ],
+                        program.programId
+      );
+
+    try {
+      await program.methods.vote(
+                  seedString,
+                  voteOption,            
+                  proposalID
+                  )
+                .accounts({
+                  voteTracker: voterPDA,
+                  proposal: proposalPDA,
+                  tokenAccount: voter4WithToken1Pubkey,
+                  user: payer4.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer4])
+                .rpc()
+      assert(false);
+    } catch (err)
+    {
+      assert(err);
+    }
+  });
+
+  it("Can't vote on a proposal with different token", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [
+                          proposalIdBuffer,
+                          mint2.publicKey.toBytes(),
+                          payer2.publicKey.toBytes(),
+                        ],
+                        program.programId
+      );
+
+    try {
+      await program.methods.vote(
+                  seedString,
+                  voteOption,            
+                  proposalID
+                  )
+                .accounts({
+                  voteTracker: voterPDA,
+                  proposal: proposalPDA,
+                  tokenAccount: voterWithToken2Pubkey,
+                  user: payer2.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer2])
+                .rpc()
+      assert(false);
+    } catch (err)
+    {
+      assert(err);
+    }
+  });
+
   it("Admin should be able to close the proposal for vote", async () => {
     // Seed for proposalPDA
     let seedString: string = "proposal_account";
@@ -251,6 +337,48 @@ describe("proposal-voting", () => {
                 .signers([payer1])
                 .rpc()
   });
+
+  it("Can't vote on a proposal that has been closed", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [
+                          proposalIdBuffer,
+                          mint1.publicKey.toBytes(),
+                          payer1.publicKey.toBytes(),
+                        ],
+                        program.programId
+      );
+
+    try {
+      await program.methods.vote(
+                  seedString,
+                  voteOption,            
+                  proposalID
+                  )
+                .accounts({
+                  voteTracker: voterPDA,
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
+      assert(false);
+    } catch (err)
+    {
+      assert(err);
+    }
+  });
+
+
 
 
 
