@@ -29,11 +29,11 @@ pub enum VoteOption {
 
 impl VoteOption
 {
-    pub fn new(vote: char) -> Result<Self> {
+    pub fn new(vote: u32) -> Result<Self> {
         match vote {
-            '0' => Ok(VoteOption::Approve),
-            '1' => Ok(VoteOption::Reject),
-            '2' => Ok(VoteOption::Abstain),
+            0 => Ok(VoteOption::Approve),
+            1 => Ok(VoteOption::Reject),
+            2 => Ok(VoteOption::Abstain),
             _ => Err(ErrorCode::InvalidVoteParameter.into()),
         }
     }
@@ -81,7 +81,8 @@ impl Proposal {
 // Ticket PDA
 #[account]
 pub struct VoteTracker {    
-    pub voter_account: Pubkey,          // voter's token account  
+    pub voter_token_account: Pubkey,          // voter's token account 
+    pub voter_account: Pubkey,                 // voter's account  
     pub proposal: Pubkey,       // proposal account the voter votes for
     pub vote_option: VoteOption,
     pub token_amount: u64,      // the amount of token help at the vote.
@@ -90,5 +91,5 @@ pub struct VoteTracker {
 impl VoteTracker {
     // Based on account varfiable sizes
     pub const ACCOUNT_SIZE: usize = ACCOUNT_DISCRIMINATOR_LENGTH 
-                                    + 4 + 4 + 1 + 8 ;
+                                    + 32*3 + 1 + 64 ;
 }

@@ -35,7 +35,9 @@ pub struct CreateProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_seed: String, proposal_id: u32)]
+#[instruction(
+    proposal_seed: String, 
+    proposal_id: u32)]
 pub struct OpenProposal<'info> {
     #[account(
         mut,
@@ -56,7 +58,9 @@ pub struct OpenProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_seed: String, proposal_id: u32)]
+#[instruction(
+    proposal_seed: String, 
+    proposal_id: u32)]
 pub struct CloseProposal<'info> {
     #[account(
         mut,
@@ -78,7 +82,7 @@ pub struct CloseProposal<'info> {
 #[derive(Accounts)]
 #[instruction(
     proposal_seed: String,
-    vote_option: String,
+    vote_option: u32,
     proposal_id: u32)]
 pub struct VoteForProposal<'info> {
     #[account(
@@ -88,10 +92,7 @@ pub struct VoteForProposal<'info> {
                 && token_account.amount > proposal.minimum_token_count_to_vote
                 && proposal.proposal_state == State::Open
                 && proposal.vote_end_timestamp > Clock::get().unwrap().unix_timestamp
-                && (vote_option.chars().next().unwrap() == '0' 
-                    || vote_option.chars().next().unwrap() == '1'
-                    || vote_option.chars().next().unwrap() == '2'
-                ),
+                && vote_option <= 2,
         seeds = [
             &proposal_id.to_be_bytes(),
             token_account.mint.as_ref(),

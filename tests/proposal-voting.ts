@@ -150,15 +150,15 @@ describe("proposal-voting", () => {
     let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
                         [
                           proposalIdBuffer,
-                          Buffer.from(mint1.publicKey.toBytes()),
-                          Buffer.from(payer1.publicKey.toBytes()),
+                          mint1.publicKey.toBytes(),
+                          payer1.publicKey.toBytes(),
                         ],
                         program.programId
       );
 
     await program.methods.vote(
                   seedString,
-                  "0",            
+                  voteOption,            
                   proposalID
                   )
                 .accounts({
@@ -186,6 +186,40 @@ describe("proposal-voting", () => {
                   proposalID
                   )
                 .accounts({
+                  proposal: proposalPDA,
+                  tokenAccount: voter1WithToken1Pubkey,
+                  user: payer1.publicKey,
+                  systemProgram: SystemProgram.programId,
+                })
+                .signers([payer1])
+                .rpc()
+  });
+
+  it("Should be able to vote on a opend proposal ", async () => {
+    // Seed for proposalPDA
+    let seedString: string = "proposal_account";
+    let seed: Buffer = Buffer.from(seedString);
+
+    const voteOption: number = 0;
+    const proposalID: number = 1;
+    const proposalIdBuffer = getNumberBuffer(proposalID);
+
+    let [voterPDA, voterBump] = await anchor.web3.PublicKey.findProgramAddress(
+                        [
+                          proposalIdBuffer,
+                          Buffer.from(mint1.publicKey.toBytes()),
+                          Buffer.from(payer1.publicKey.toBytes()),
+                        ],
+                        program.programId
+      );
+
+    await program.methods.vote(
+                  seedString,
+                  0,            
+                  proposalID
+                  )
+                .accounts({
+                  voteTracker: voterPDA,
                   proposal: proposalPDA,
                   tokenAccount: voter1WithToken1Pubkey,
                   user: payer1.publicKey,
